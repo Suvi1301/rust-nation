@@ -35,7 +35,7 @@ fn main() {
     //     .collect();
 
     std::thread::scope(|scope| {
-        let chunks = candidates.chunks(candidates.len() / num_cpus);
+        let chunks = candidates.chunks(num_cpus); // chunks at a time. So if 16 cpus, then 16 items per list.
 
         for chunk in chunks {
             let my_primes = primes.clone();
