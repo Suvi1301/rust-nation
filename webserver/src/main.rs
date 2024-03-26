@@ -1,7 +1,8 @@
 use anyhow::Result;
 use sqlx::Row;
+use axum::Extension;
 
-#[derive(Debug, sqlx::FromRow)]
+#[derive(Debug, sqlx::FromRow, serde::Serialize, serde::Deserialize)]
 struct BlogPost {
     id: i32,
     date: String,
@@ -29,7 +30,9 @@ async fn main() -> Result<()> {
 
     // Build an Axum Router and run it
     let app = axum::Router::new()
-        .route("/hello", axum::routing::get(say_hello));
+        .route("/hello", axum::routing::get(say_hello))
+        .route("/", axum::routing::get(get_blog_posts_handler))
+        .layer(Extension(pool.clone()));
     axum::serve(listener, app).await?;
 
     Ok(())
@@ -103,4 +106,11 @@ async fn delete_blog_post(pool: sqlx::SqlitePool, id: i32) -> Result<()> {
 
 async fn say_hello() -> &'static str {
     "Hello World!"
+}
+
+async fn get_blog_posts_handler(
+    Extension(pool): Extension<sqlx::SqlitePool>,
+) -> axum::Json<Vec<BlogPost>> {
+    let posts = get_blog_posts(pool).await.unwrap();
+    axum::Json(posts)
 }
