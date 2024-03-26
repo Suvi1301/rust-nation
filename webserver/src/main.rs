@@ -22,29 +22,15 @@ async fn main() -> Result<()> {
     println!("Running migrations");
     run_migrations(pool.clone()).await?;
 
-    println!("All Blog posts: {:?}", get_blog_posts(pool.clone()).await?);
-    println!("Blog post with id 1: {:?}", get_blog_post(pool.clone(), 1).await?);
+    // TCP Listener
+    let listen_address = std::env::var("LISTEN_ADDRESS")?;
+    println!("Listening on: {listen_address}");
+    let listener = tokio::net::TcpListener::bind(&listen_address).await?;
 
-    let new_id = add_blog_post(
-        pool.clone(),
-        "2021-01-01".to_string(),
-        "My first blog post".to_string(),
-        "This is my first blog post".to_string(),
-        "Suvi".to_string()
-    ).await?;
-    println!("New added post: {:?}", get_blog_post(pool.clone(), new_id).await?);
-
-    update_blog_post(
-        pool.clone(),
-        new_id,
-        "2021-01-01".to_string(),
-        "My first blog post".to_string(),
-        "This is my first blog post. I have updated it.".to_string(),
-        "Suvi again".to_string()
-    ).await?;
-    println!("Update post: {:?}", get_blog_post(pool.clone(), new_id).await?);
-    delete_blog_post(pool.clone(), new_id).await?;
-    println!("{:?}", get_blog_posts(pool.clone()).await?);
+    // Build an Axum Router and run it
+    let app = axum::Router::new()
+        .route("/hello", axum::routing::get(say_hello));
+    axum::serve(listener, app).await?;
 
     Ok(())
 }
@@ -113,4 +99,8 @@ async fn delete_blog_post(pool: sqlx::SqlitePool, id: i32) -> Result<()> {
         .await?;
 
     Ok(())
+}
+
+async fn say_hello() -> &'static str {
+    "Hello World!"
 }
