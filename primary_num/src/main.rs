@@ -1,3 +1,4 @@
+use rand::seq::SliceRandom;
 use std::{
     sync::{Arc, Mutex},
     time::Instant,
@@ -23,16 +24,14 @@ fn is_prime(n: usize) -> bool {
 fn main() {
     let num_cpus = num_cpus::get();
     println!("Using {num_cpus} threads.");
-    let candidates: Vec<usize> = (0..MAX_NUMBER).collect();
+    let mut candidates: Vec<usize> = (0..MAX_NUMBER).collect();
 
     // Perform the calculation
     let start = Instant::now(); // We are not timing the initial condition
     let primes: Arc<Mutex<Vec<usize>>> = Arc::new(Mutex::new(Vec::new()));
-    // let primes: Vec<usize> = candidates
-    //     .iter()
-    //     .filter(|n| is_prime(**n))
-    //     .map(|n| *n)
-    //     .collect();
+
+    // Shuffle the candidates so we can randomise the slices for each thread.
+    candidates.shuffle(&mut rand::thread_rng());
 
     std::thread::scope(|scope| {
         let chunks = candidates.chunks(num_cpus); // chunks at a time. So if 16 cpus, then 16 items per list.
