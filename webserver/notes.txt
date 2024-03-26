@@ -1,0 +1,3 @@
+Create DB: `sqlx database create`
+Add initial migration: `sqlx migrate add initial`
+Add SQL migration to the migration file and run the migration: `sqlx migrate run`
