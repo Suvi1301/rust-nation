@@ -30,8 +30,12 @@ async fn main() -> Result<()> {
 
     // Build an Axum Router and run it
     let app = axum::Router::new()
-        .route("/hello", axum::routing::get(say_hello))
-        .route("/", axum::routing::get(get_blog_posts_handler))
+        .route("/hello", get(say_hello))
+        .route("/", get(get_blog_posts_handler))
+        .route("/:id", get(get_blog_post_handler))
+        .route("/add", post(add_blog_post_handler))
+        .route("/update/:id", post(update_blog_post_handler))
+        .route("/delete/:id", post(delete_blog_post_handler))
         .layer(Extension(pool.clone()));
     axum::serve(listener, app).await?;
 
@@ -113,4 +117,37 @@ async fn get_blog_posts_handler(
 ) -> axum::Json<Vec<BlogPost>> {
     let posts = get_blog_posts(pool).await.unwrap();
     axum::Json(posts)
+}
+
+async fn get_blog_post_handler(
+    Extension(pool): Extension<sqlx::SqlitePool>,
+    axum::extract::Path(id): axum::extract::Path<i32>,
+) -> axum::Json<BlogPost> {
+    let post = get_blog_post(pool, id).await.unwrap();
+    axum::Json(post)
+}
+
+async fn add_blog_post_handler(
+    Extension(pool): Extension<sqlx::SqlitePool>,
+    axum::extract::Json(post): axum::extract::Json<BlogPost>,
+) -> axum::Json<i32> {
+    let id = add_blog_post(pool, post.date, post.title, post.body, post.author).await.unwrap();
+    axum::Json(id)
+}
+
+async fn update_blog_post_handler(
+    Extension(pool): Extension<sqlx::SqlitePool>,
+    axum::extract::Path(id): axum::extract::Path<i32>,
+    axum::extract::Json(post): axum::extract::Json<BlogPost>,
+) -> axum::Json<()> {
+    update_blog_post(pool, id, post.date, post.title, post.body, post.author).await.unwrap();
+    axum::Json(())
+}
+
+async fn delete_blog_post_handler(
+    Extension(pool): Extension<sqlx::SqlitePool>,
+    axum::extract::Path(id): axum::extract::Path<i32>,
+) -> axum::Json<()> {
+    delete_blog_post(pool, id).await.unwrap();
+    axum::Json(())
 }
