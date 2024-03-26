@@ -37,9 +37,12 @@ fn main() {
     std::thread::scope(|scope| {
         let chunks = candidates.chunks(num_cpus); // chunks at a time. So if 16 cpus, then 16 items per list.
 
-        for chunk in chunks {
+        for (id, chunk) in chunks.enumerate() {
             let my_primes = primes.clone();
             scope.spawn(move || {
+                // Time each chunk
+                let chunk_start = Instant::now();
+
                 // Perform the same filter/map/collect chain as we did single-threaded
                 let local_results: Vec<usize> =
                     chunk.iter().filter(|n| is_prime(**n)).map(|n| *n).collect();
@@ -49,6 +52,15 @@ fn main() {
 
                 // Extend the results with our discovered primes
                 lock.extend(local_results);
+
+                // Print the time for each chunk
+                let chunk_elapsed = chunk_start.elapsed();
+                println!(
+                    "Thread #{id} took {:.3} seconds",
+                    chunk_elapsed.as_secs_f32()
+                );
+                // Notice the threads with higher id will take longer because they have to work harder on the chunks
+                // because the chunks are slices and the later chunks have harder numbers to crack for is_prime.
             });
         }
 
