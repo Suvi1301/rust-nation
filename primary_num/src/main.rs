@@ -1,4 +1,5 @@
 use rand::seq::SliceRandom;
+use rayon::prelude::*;
 use std::{
     sync::{Arc, Mutex},
     time::Instant,
@@ -21,7 +22,27 @@ fn is_prime(n: usize) -> bool {
     }
 }
 
+fn main_with_rayon() {
+    println!("RUNNING WITH RAYON");
+    let mut candidates: Vec<usize> = (0..MAX_NUMBER).collect();
+    candidates.shuffle(&mut rand::thread_rng());
+
+    // Perform the calculation
+    let start = Instant::now();
+    let primes = candidates
+        .par_iter()
+        .filter(|n| is_prime(**n))
+        .map(|n| *n)
+        .collect::<Vec<usize>>();
+
+    let elapsed = start.elapsed();
+    // Results
+    println!("Found {} primes", primes.len());
+    println!("Calculated in {:.4} seconds", elapsed.as_secs_f32());
+}
+
 fn main_without_mutex() {
+    println!("RUNNING WITHOUT MUTEX");
     let num_cpus = num_cpus::get();
     println!("Using {num_cpus} threads.");
     let mut candidates: Vec<usize> = (0..MAX_NUMBER).collect();
@@ -57,7 +78,8 @@ fn main_without_mutex() {
     println!("Calculated in {:.4} seconds", elapsed.as_secs_f32());
 }
 
-fn main() {
+fn main_incremental_threading() {
+    println!("RUNNING WITH MUTEX AND ARC THREADING");
     let num_cpus = num_cpus::get();
     println!("Using {num_cpus} threads.");
     let mut candidates: Vec<usize> = (0..MAX_NUMBER).collect();
@@ -109,4 +131,10 @@ fn main() {
     let lock = primes.lock().unwrap();
     println!("Found {} primes", lock.len());
     println!("Calculated in {:.4} seconds", elapsed.as_secs_f32());
+}
+
+fn main() {
+    main_incremental_threading();
+    main_without_mutex();
+    main_with_rayon();
 }
