@@ -30,12 +30,12 @@ async fn main() -> Result<()> {
 
     // Build an Axum Router and run it
     let app = axum::Router::new()
-        .route("/hello", get(say_hello))
-        .route("/", get(get_blog_posts_handler))
-        .route("/:id", get(get_blog_post_handler))
-        .route("/add", post(add_blog_post_handler))
-        .route("/update/:id", post(update_blog_post_handler))
-        .route("/delete/:id", post(delete_blog_post_handler))
+        .route("/hello", axum::routing::get(say_hello))
+        .route("/", axum::routing::get(get_blog_posts_handler))
+        .route("/:id", axum::routing::get(get_blog_post_handler))
+        .route("/add", axum::routing::post(add_blog_post_handler))
+        .route("/update/:id", axum::routing::post(update_blog_post_handler))
+        .route("/delete/:id", axum::routing::post(delete_blog_post_handler))
         .layer(Extension(pool.clone()));
     axum::serve(listener, app).await?;
 
